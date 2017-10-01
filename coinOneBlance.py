@@ -1,0 +1,59 @@
+#-*- coding: utf-8 -*-
+import base64
+import simplejson as json
+import hashlib
+import hmac
+import httplib2
+import time
+import pprint
+
+
+class CoinOneBlance:
+	URL = 'https://api.coinone.co.kr/v2/account/balance/'
+	ACCESS_TOKEN	= ''
+	SECRET_KEY 		= ''
+
+	def __init__(self, config):
+		self.ACCESS_TOKEN 	= config['ACCESS_TOKEN']
+		self.SECRET_KEY 	= config['SECRET_KEY'].encode('utf-8')
+
+	def getPayLoad(self):
+		return {
+			"access_token": self.ACCESS_TOKEN,
+		}
+
+
+	def get_encoded_payload(self, payload):
+		payload[u'nonce'] = int(time.time()*1000)
+
+		dumped_json = json.dumps(payload)
+		encoded_json = base64.b64encode(dumped_json.encode('utf-8'))
+		return encoded_json
+
+	def get_signature(self, encoded_payload, secret_key):
+		signature = hmac.new(secret_key.upper(), encoded_payload, hashlib.sha512);
+		return signature.hexdigest()
+
+	def get_response(self, url, payload):
+		encoded_payload = self.get_encoded_payload(payload)
+		headers = {
+			'Content-type': 'application/json',
+			'X-COINONE-PAYLOAD': encoded_payload,
+			'X-COINONE-SIGNATURE': self.get_signature(encoded_payload, self.SECRET_KEY)
+		}
+		http = httplib2.Http()
+		response, content = http.request(self.URL, 'POST', headers=headers, body=encoded_payload)
+		return content
+
+	def get_result(self):
+		content = self.get_response(self.URL, self.getPayLoad())
+		content = json.loads(content)
+
+		return content
+
+if __name__   == "__main__":
+	config = {
+		'ACCESS_TOKEN':'ee',
+		'SECRET_KEY':'ee'
+	}
+	pprint.pprint(CoinOneBlance(config).get_result());
