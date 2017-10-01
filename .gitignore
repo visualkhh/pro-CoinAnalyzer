@@ -32,6 +32,8 @@ cmake-build-debug/
 ## File-based project format:
 *.iws
 *.iml
+*.log
+
 
 ## Plugin-specific files:
 

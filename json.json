@@ -1,0 +1,42 @@
+{
+  'errorCode': '0',
+  'limitOrders': [
+    {
+      'feeRate': '0.001',
+      'index': '0',
+      'orderId': '470a5b5d-5dee-47b9-8fb1-ef8996bbd61a',
+      'price': '5886500',
+      'qty': '0.2164',
+      'timestamp': '1506884579',
+      'type': 'ask'
+    },
+    {
+      'feeRate': '0.001',
+      'index': '1',
+      'orderId': 'ed484880-293f-45a2-87af-aa92121a99d7',
+      'price': '5886500',
+      'qty': '0.0001',
+      'timestamp': '1506883726',
+      'type': 'ask'
+    },
+    {
+      'feeRate': '0.001',
+      'index': '2',
+      'orderId': '9b0c3f4a-342f-4e78-8989-b60a26f7693d',
+      'price': '5886500',
+      'qty': '0.0001',
+      'timestamp': '1506883242',
+      'type': 'ask'
+    },
+    {
+      'feeRate': '0.001',
+      'index': '0',
+      'orderId': 'c68ca074-62c3-4fcb-955e-39e45f894781',
+      'price': '3886500',
+      'qty': '0.0001',
+      'timestamp': '1506883106',
+      'type': 'bid'
+    }
+  ],
+  'result': 'success'
+}
