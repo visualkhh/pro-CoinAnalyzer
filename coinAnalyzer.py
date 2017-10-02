@@ -43,6 +43,9 @@ SELL_PER 	= None	#Decimal(0.03) 			#수익률 퍼센트 EARN_PER
 BUY_PER 	= None	#Decimal(0.03) 			#매도 퍼센트
 KRW_SELL 	= None	#Decimal(100000000) 	#팔때 KRW에 얼마더 추가할건지
 KRW_BUY 	= None	#Decimal(200000000) 	#살때 KRW에 얼마더 추가할건지
+#WAIT
+BUY_WAIT_SEC 		= None
+SELL_WAIT_SEC 		= None
 #config end
 
 
@@ -52,29 +55,29 @@ START_KRW_QUOTE 	= None
 START_BTC_BALANCE 	= None
 
 KRW_QUOTE 			= None
-
-
-#WAIT
-BUY_WAIT_SEC 		= None
-SELL_WAIT_SEC 		= None
-
-
+BTC_BALANCE 		= None
 
 BUY_WAIT			= False
 SELL_WAIT			= False
 
 
+
+
+
+
+
 def on_message(ws, message):
 	# print("==========")
 	try:
-		global START_KRW_QUOTE, START_BTC_BALANCE, KRW_QUOTE, SELL_WAIT, BUY_WAIT
+		global START_KRW_QUOTE, START_BTC_BALANCE, KRW_QUOTE, BTC_BALANCE, SELL_WAIT, BUY_WAIT
 
 		krwQuote = Decimal(json.loads(message)['coinoneP'])						#1코인당 KRW
 		krwBalance = Decimal(CoinOneBlance(CONFIG).get_result()['krw']['avail'])
 		btcBalance = Decimal(CoinOneBlance(CONFIG).get_result()['btc']['avail'])
 
-		#잔액이 상승되면 다시 시작한다.
-		if START_BTC_BALANCE and btcBalance > START_BTC_BALANCE:
+		#btc 잔액이 변경 되면 다시 시작한다.
+		# if START_BTC_BALANCE and btcBalance > START_BTC_BALANCE:
+		if START_BTC_BALANCE and BTC_BALANCE and START_BTC_BALANCE != BTC_BALANCE:
 			START_KRW_QUOTE 	= None
 			START_BTC_BALANCE 	= None
 
@@ -86,7 +89,10 @@ def on_message(ws, message):
 
 		if krwQuote!=KRW_QUOTE:
 			logger.debug("*** KRW Quote Modify \t start({}) -> this({}) = |{}| ***".format(START_KRW_QUOTE, krwQuote, krwQuote-START_KRW_QUOTE))
-		KRW_QUOTE = krwQuote
+		if btcBalance!=BTC_BALANCE:
+			logger.debug("*** btc balance Modify \t start({}) -> this({}) = |{}| ***".format(START_BTC_BALANCE, btcBalance, btcBalance-START_BTC_BALANCE))
+		KRW_QUOTE 	= krwQuote
+		BTC_BALANCE = btcBalance
 
 		startKRW 			= Decimal(START_KRW_QUOTE * btcBalance)				#시작금액
 		sellKRW				= Decimal(startKRW + (startKRW * SELL_PER))			#판매 목적금액
@@ -112,7 +118,7 @@ def on_message(ws, message):
 			.format(startKRW, stateBuyPer, stateBuyVal, buyKRW, stateStartThisVal))
 
 
-		# time.sleep(10)
+
 
 		#팔수있는 상황이면 팔아라
 		if not SELL_WAIT and stateSellPer > Decimal(100):
@@ -173,7 +179,7 @@ def buy(krwBalance, krwQuote):
 	logger.debug("==buy==")
 	qty = krwBalance / krwQuote;
 	payload = {
-		"price": int(krwBalance + KRW_BUY),
+		"price": int(krwQuote + KRW_BUY),
 		"qty": float(math.trunc(qty*10000)/10000),  #coinone은 소수점 4자리수까지만 받는다  최소단위 btc
 		"currency": "btc"
 	}
