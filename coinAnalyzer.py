@@ -71,9 +71,11 @@ def on_message(ws, message):
 	try:
 		global START_KRW_QUOTE, START_BTC_BALANCE, KRW_QUOTE, BTC_BALANCE, SELL_WAIT, BUY_WAIT
 
-		krwQuote = Decimal(json.loads(message)['coinoneP'])						#1코인당 KRW
-		krwBalance = Decimal(CoinOneBlance(CONFIG).get_result()['krw']['avail'])
-		btcBalance = Decimal(CoinOneBlance(CONFIG).get_result()['btc']['avail'])
+		krwQuote 		= Decimal(json.loads(message)['coinoneP'])						#1코인당 KRW
+		krwBalance 		= Decimal(CoinOneBlance(CONFIG).get_result()['krw']['balance'])
+		krwAvailBalance = Decimal(CoinOneBlance(CONFIG).get_result()['krw']['avail'])
+		btcBalance 		= Decimal(CoinOneBlance(CONFIG).get_result()['btc']['balance'])
+		btcAvailBalance = Decimal(CoinOneBlance(CONFIG).get_result()['btc']['avail'])
 
 		#btc 잔액이 변경 되면 다시 시작한다.
 		# if START_BTC_BALANCE and btcBalance > START_BTC_BALANCE:
@@ -90,32 +92,44 @@ def on_message(ws, message):
 		if krwQuote!=KRW_QUOTE:
 			logger.debug("*** KRW Quote Modify \t start({}) -> this({}) = |{}| ***".format(START_KRW_QUOTE, krwQuote, krwQuote-START_KRW_QUOTE))
 		if btcBalance!=BTC_BALANCE:
-			logger.debug("*** btc balance Modify \t start({}) -> this({}) = |{}| ***".format(START_BTC_BALANCE, btcBalance, btcBalance-START_BTC_BALANCE))
+			logger.debug("*** btc balance Modify \t start({}) -> availb({}) banlance({}) = |{}| ***".format(START_BTC_BALANCE, btcAvailBalance, btcBalance, btcBalance-START_BTC_BALANCE))
 		KRW_QUOTE 	= krwQuote
 		BTC_BALANCE = btcBalance
 
-		startKRW 			= Decimal(START_KRW_QUOTE * btcBalance)				#시작금액
-		sellKRW				= Decimal(startKRW + (startKRW * SELL_PER))			#판매 목적금액
-		buyKRW				= Decimal(startKRW - (startKRW * BUY_PER))			#구매 목적금액
+		startKRW 			= Decimal(START_KRW_QUOTE * btcBalance)							#시작금액
+		sellKRW				= Decimal(startKRW + (startKRW * SELL_PER))						#판매 목적금액
+		buyKRW				= Decimal(startKRW - (startKRW * BUY_PER))						#구매 목적금액
+		sellQuotKRW			= Decimal(START_KRW_QUOTE + (START_KRW_QUOTE * SELL_PER))		#1btc당 krw 판매 목적금액
+		buyQuotKRW			= Decimal(START_KRW_QUOTE - (START_KRW_QUOTE * BUY_PER))		#1btc당 krw 구매 목적금액
 
+		startSellQuotePer 	= Decimal((krwQuote / sellQuotKRW) *100)		#1btc당 krw 판매 목표금액 100%달성하기위한 현재 상태
+		startSellQuoteVal	= Decimal(sellQuotKRW - krwQuote)			#1btc당 krw 판매 목표금액 달성하기 위한 현재 부족한 금액상태
 		thisKRW 			= Decimal(KRW_QUOTE * btcBalance)					#현재금액
 		stateSellPer 		= Decimal((thisKRW / sellKRW) * 100)				#판매 목표금액 100%달성하기위한 현재 상태
 		stateSellVal 		= Decimal(sellKRW - thisKRW)						#판매 목표금액 달성하기 위한 현재 부족한 금액상태
 
-		stateBuyPer 		= Decimal(((buyKRW / thisKRW ) * 100))				#구매 목표금액 100%달성하기위한 현재 상태
+
+		startBuyQuotePer 	= Decimal((buyQuotKRW / krwQuote) *100)		#1btc당 krw 판매 목표금액 100%달성하기위한 현재 상태
+		startBuyQuoteVal	= Decimal(krwQuote - buyQuotKRW)				#1btc당 krw 판매 목표금액 달성하기 위한 현재 부족한 금액상태
+		stateBuyPer 		= Decimal(((buyKRW / thisKRW) * 100))				#구매 목표금액 100%달성하기위한 현재 상태
 		stateBuyVal 		= Decimal(thisKRW - buyKRW)							#구매 목표금액 달성하기 위한 현재 부족한 금액상태
 
-		stateStartThisVal 	= Decimal(thisKRW - startKRW)						#시작 금액에서 얼마만큼 상하인지
+		stateStartThisVal 		= Decimal(thisKRW - startKRW)						#시작 금액에서 얼마만큼 상하인지
+		stateStartThisQuoteVal 	= Decimal(krwQuote - START_KRW_QUOTE)				#1btc당 krw 시작 금액에서 얼마만큼 상하인지
 
 
-		# log("SELL STATE: KRW // S({:}) C({:}) \t W({:}%, {:}) \t -> \t E({:}) = G{:}"
-		# 	.format(startKRW, thisKRW, stateSellPer, stateSellVal, sellKRW, stateStartThisVal))
 		logger.debug("--SELL_WAIT:{} BUY_WAIT:{},  BTC:1btcKRWval({:10.8})  MY:btcBal({:10.8}  btcVal({:10.8})"
 					 .format(SELL_WAIT,BUY_WAIT,krwQuote,btcBalance,thisKRW));
+
+		# logger.debug("SELL STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
+		# 	.format(startKRW, stateSellPer, stateSellVal, sellKRW, stateStartThisVal))
 		logger.debug("SELL STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
-			.format(startKRW, stateSellPer, stateSellVal, sellKRW, stateStartThisVal))
+			.format(START_KRW_QUOTE, startSellQuotePer, startSellQuoteVal, sellQuotKRW, stateStartThisQuoteVal))
+
+		# logger.debug(" BUY STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
+		# 	.format(startKRW, stateBuyPer, stateBuyVal, buyKRW, stateStartThisVal))
 		logger.debug(" BUY STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
-			.format(startKRW, stateBuyPer, stateBuyVal, buyKRW, stateStartThisVal))
+			.format(START_KRW_QUOTE, startBuyQuotePer, startBuyQuoteVal, buyQuotKRW, stateStartThisQuoteVal))
 
 
 
@@ -128,7 +142,7 @@ def on_message(ws, message):
 				logger.debug("thread start {} {}".format("sell", current_thread().getName()))
 				try:
 					result = sell(btcBalance, krwQuote)
-					if'0'==result['errorCode']:
+					if result and '0'==result['errorCode']:
 						time.sleep(SELL_WAIT_SEC)
 				except Exception as e:
 					logger.debug(e)
@@ -147,7 +161,7 @@ def on_message(ws, message):
 				logger.debug("thread start {} {}".format("buy", current_thread().getName()))
 				try:
 					result = buy(krwBalance, krwQuote)
-					if '0'==result['errorCode']:
+					if result and '0'==result['errorCode']:
 						time.sleep(BUY_WAIT_SEC)
 				except Exception as e:
 					logger.debug(e)
@@ -165,6 +179,8 @@ def on_message(ws, message):
 #매도
 def sell(btcBalance, krwQuote):
 	logger.debug("==sell==")
+	if(btcBalance<Decimal("0.01")):
+		logging.debug("Sell no request  low qty {} ".format(qty))
 	payload = {
 	  "price": int(krwQuote + KRW_SELL),
 	  "qty": float(math.trunc(btcBalance*10000)/10000), #coinone은 소수점 4자리수까지만 받는다  최소단위 btc
@@ -177,7 +193,10 @@ def sell(btcBalance, krwQuote):
 #매수
 def buy(krwBalance, krwQuote):
 	logger.debug("==buy==")
-	qty = krwBalance / krwQuote;
+	qty = Decimal(krwBalance / krwQuote);
+	if(qty<Decimal("0.01")):
+		logging.debug("Buy no request  low qty {} ".format(qty))
+		return
 	payload = {
 		"price": int(krwQuote + KRW_BUY),
 		"qty": float(math.trunc(qty*10000)/10000),  #coinone은 소수점 4자리수까지만 받는다  최소단위 btc
