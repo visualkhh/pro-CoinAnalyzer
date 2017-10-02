@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 import websocket
 import _thread
+from threading import Thread, current_thread
 import time
 import json
 import logging
@@ -39,13 +40,14 @@ SELL_WAIT_SEC 		= None
 
 
 
-
+BUY_WAIT			= False
+SELL_WAIT			= False
 
 
 def on_message(ws, message):
 	# print("==========")
 	try:
-		global START_KRW_QUOTE, START_BTC_BALANCE, KRW_QUOTE, startKRW, sellKRW
+		global START_KRW_QUOTE, START_BTC_BALANCE, KRW_QUOTE, SELL_WAIT, BUY_WAIT
 
 		krwQuote = Decimal(json.loads(message)['coinoneP'])						#1코인당 KRW
 		krwBalance = Decimal(CoinOneBlance(CONFIG).get_result()['krw']['avail'])
@@ -82,6 +84,7 @@ def on_message(ws, message):
 
 		# log("SELL STATE: KRW // S({:}) C({:}) \t W({:}%, {:}) \t -> \t E({:}) = G{:}"
 		# 	.format(startKRW, thisKRW, stateSellPer, stateSellVal, sellKRW, stateStartThisVal))
+		log("-----  SELL_WAIT:{} BUY_WAIT:{}".format(SELL_WAIT,BUY_WAIT));
 		log("SELL STATE: KRW // 1btc({:10.8}) S({:10.8}) C({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
 			.format(krwQuote, startKRW, thisKRW, stateSellPer, stateSellVal, sellKRW, stateStartThisVal))
 		log(" BUY STATE: KRW // 1btc({:10.8}) S({:10.8}) C({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
@@ -91,19 +94,43 @@ def on_message(ws, message):
 		# time.sleep(10)
 
 		#팔수있는 상황이면 팔아라
-		if stateSellPer > Decimal(100):
-			cancelSell()
-			time.sleep(1)
-			result = sell(btcBalance, krwQuote)
-			if '0'==result['errorCode']:
-				time.sleep(SELL_WAIT_SEC)
+		if not SELL_WAIT and stateSellPer > Decimal(100):
+			def run(*args):
+				global SELL_WAIT
+				SELL_WAIT = True
+				log("thread start {} {}".format("sell", current_thread().getName()))
+				try:
+					result = sell(btcBalance, krwQuote)
+					if'0'==result['errorCode']:
+						time.sleep(SELL_WAIT_SEC)
+				except Exception as e:
+					log(e)
+				finally:
+					cancelSell()# time.sleep(1)
+					SELL_WAIT = False
+					log("thread end {} {}".format("sell", current_thread().getName()))
+			Thread(target=run).start()
+
+
 		# 살수 있는 상황이면 사라
-		if stateBuyPer > Decimal(100):
-			cancelBuy()
-			time.sleep(1)
-			result = buy(krwBalance, krwQuote)
-			if '0'==result['errorCode']:
-				time.sleep(BUY_WAIT_SEC)
+		if not BUY_WAIT and stateBuyPer > Decimal(100):
+			def run(*args):
+				global BUY_WAIT
+				BUY_WAIT = True
+				log("thread start {} {}".format("buy", current_thread().getName()))
+				try:
+					result = buy(krwBalance, krwQuote)
+					if '0'==result['errorCode']:
+						time.sleep(BUY_WAIT_SEC)
+				except Exception as e:
+					log(e)
+				finally:
+					cancelBuy()
+					BUY_WAIT = False
+					log("thread end {} {}".format("buy", current_thread().getName()))
+			Thread(target=run,).start()
+
+
 	except Exception as e:
 		log(e)
 
@@ -175,17 +202,18 @@ def on_close(ws):
 	log("### closed ###")
 
 def on_open(ws):
-	def run(*args):
-		for i in range(1):
-			time.sleep(1)
-			# ws.send("Hello %d" % i)
-			ws.send("{event: 'join', channel: 'live'}")
-			# result = ws.recv();
-			# print(result)
-		time.sleep(1)
-		# ws.close()
-		log("thread terminating...")
-	_thread.start_new_thread(run, ())
+	ws.send("{event: 'join', channel: 'live'}")
+	# def run(*args):
+	# 	for i in range(1):
+	# 		time.sleep(1)
+	# 		# ws.send("Hello %d" % i)
+	# 		ws.send("{event: 'join', channel: 'live'}")
+	# 		# result = ws.recv();
+	# 		# print(result)
+	# 	time.sleep(1)
+	# 	# ws.close()
+	# 	log("thread terminating...")
+	# _thread.start_new_thread(run, ())
 
 def log(str):
 	print(str)
