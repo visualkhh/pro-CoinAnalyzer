@@ -5,6 +5,7 @@ from threading import Thread, current_thread
 import time
 import json
 import logging
+import logging.handlers
 import sys
 import configparser
 import math
@@ -15,7 +16,26 @@ from coinOneMyLimitOrder import CoinOneMyLimitOrder
 from coinOneLimitSell import CoinOneLimitSell
 from coinOneLimitBuy import CoinOneLimitBuy
 from coinOneCancel import CoinOneCancel
-logging.basicConfig(filename='log.log',format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',level=logging.DEBUG)
+
+
+# logger 인스턴스를 생성 및 로그 레벨 설정
+logger = logging.getLogger("coinAnalyzer")
+logger.setLevel(logging.DEBUG)
+# fileHandler와 StreamHandler를 생성
+# file max size를 10MB로 설정
+file_max_bytes = 10 * 1024 * 1024
+# fileHandler = logging.FileHandler(filename='./log/my.log', maxBytes=file_max_bytes, backupCount=10)
+fileHandler = logging.handlers.RotatingFileHandler('./log/my.log', maxBytes=file_max_bytes, backupCount=10)
+streamHandler = logging.StreamHandler()
+# formmater 생성
+formatter = logging.Formatter('[%(levelname)s|%(filename)s:%(lineno)s] %(asctime)s > %(message)s')
+fileHandler.setFormatter(formatter)
+streamHandler.setFormatter(formatter)
+# Handler를 logging에 추가
+logger.addHandler(fileHandler)
+logger.addHandler(streamHandler)
+
+
 
 ##config
 CONFIG		= None
@@ -65,7 +85,7 @@ def on_message(ws, message):
 
 
 		if krwQuote!=KRW_QUOTE:
-			log("*** KRW Quote Modify \t start({}) -> this({}) = |{}| ***".format(START_KRW_QUOTE, krwQuote, krwQuote-START_KRW_QUOTE))
+			logger.debug("*** KRW Quote Modify \t start({}) -> this({}) = |{}| ***".format(START_KRW_QUOTE, krwQuote, krwQuote-START_KRW_QUOTE))
 		KRW_QUOTE = krwQuote
 
 		startKRW 			= Decimal(START_KRW_QUOTE * btcBalance)				#시작금액
@@ -84,11 +104,12 @@ def on_message(ws, message):
 
 		# log("SELL STATE: KRW // S({:}) C({:}) \t W({:}%, {:}) \t -> \t E({:}) = G{:}"
 		# 	.format(startKRW, thisKRW, stateSellPer, stateSellVal, sellKRW, stateStartThisVal))
-		log("-----  SELL_WAIT:{} BUY_WAIT:{}".format(SELL_WAIT,BUY_WAIT));
-		log("SELL STATE: KRW // 1btc({:10.8}) S({:10.8}) C({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
-			.format(krwQuote, startKRW, thisKRW, stateSellPer, stateSellVal, sellKRW, stateStartThisVal))
-		log(" BUY STATE: KRW // 1btc({:10.8}) S({:10.8}) C({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
-			.format(krwQuote, startKRW, thisKRW, stateBuyPer, stateBuyVal, buyKRW, stateStartThisVal))
+		logger.debug("--SELL_WAIT:{} BUY_WAIT:{},  BTC:1btcKRWval({:10.8})  MY:btcBal({:10.8}  btcVal({:10.8})"
+					 .format(SELL_WAIT,BUY_WAIT,krwQuote,btcBalance,thisKRW));
+		logger.debug("SELL STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
+			.format(startKRW, stateSellPer, stateSellVal, sellKRW, stateStartThisVal))
+		logger.debug(" BUY STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
+			.format(startKRW, stateBuyPer, stateBuyVal, buyKRW, stateStartThisVal))
 
 
 		# time.sleep(10)
@@ -98,17 +119,17 @@ def on_message(ws, message):
 			def run(*args):
 				global SELL_WAIT
 				SELL_WAIT = True
-				log("thread start {} {}".format("sell", current_thread().getName()))
+				logger.debug("thread start {} {}".format("sell", current_thread().getName()))
 				try:
 					result = sell(btcBalance, krwQuote)
 					if'0'==result['errorCode']:
 						time.sleep(SELL_WAIT_SEC)
 				except Exception as e:
-					log(e)
+					logger.debug(e)
 				finally:
 					cancelSell()# time.sleep(1)
 					SELL_WAIT = False
-					log("thread end {} {}".format("sell", current_thread().getName()))
+					logger.debug("thread end {} {}".format("sell", current_thread().getName()))
 			Thread(target=run).start()
 
 
@@ -117,27 +138,27 @@ def on_message(ws, message):
 			def run(*args):
 				global BUY_WAIT
 				BUY_WAIT = True
-				log("thread start {} {}".format("buy", current_thread().getName()))
+				logger.debug("thread start {} {}".format("buy", current_thread().getName()))
 				try:
 					result = buy(krwBalance, krwQuote)
 					if '0'==result['errorCode']:
 						time.sleep(BUY_WAIT_SEC)
 				except Exception as e:
-					log(e)
+					logger.debug(e)
 				finally:
 					cancelBuy()
 					BUY_WAIT = False
-					log("thread end {} {}".format("buy", current_thread().getName()))
+					logger.debug("thread end {} {}".format("buy", current_thread().getName()))
 			Thread(target=run,).start()
 
 
 	except Exception as e:
-		log(e)
+		logger.debug(e)
 
 
 #매도
 def sell(btcBalance, krwQuote):
-	log("==sell==")
+	logger.debug("==sell==")
 	payload = {
 	  "price": int(krwQuote + KRW_SELL),
 	  "qty": float(math.trunc(btcBalance*10000)/10000), #coinone은 소수점 4자리수까지만 받는다  최소단위 btc
@@ -145,11 +166,11 @@ def sell(btcBalance, krwQuote):
 	}
 	# log(sellPayload)
 	result = CoinOneLimitSell(CONFIG, payload).get_result()
-	log(result)
+	logger.debug(result)
 	return result
 #매수
 def buy(krwBalance, krwQuote):
-	log("==buy==")
+	logger.debug("==buy==")
 	qty = krwBalance / krwQuote;
 	payload = {
 		"price": int(krwBalance + KRW_BUY),
@@ -158,7 +179,7 @@ def buy(krwBalance, krwQuote):
 	}
 	# log(buyPayload)
 	result = CoinOneLimitBuy(CONFIG, payload).get_result()
-	log(result)
+	logger.debug(result)
 	return result
 
 def cancel(atOrder):
@@ -169,19 +190,19 @@ def cancel(atOrder):
 		"is_ask": 1 if 'ask'==atOrder['type'] else 0,
 		"currency": "btc"
 	}
-	log(CoinOneCancel(CONFIG, payload).get_result())
+	logger.debug(CoinOneCancel(CONFIG, payload).get_result())
 	pass
 def limitOrder():
 	limitOrderPayload = {
 		"currency": "btc"
 	}
 	limitOrder = CoinOneMyLimitOrder(CONFIG, limitOrderPayload).get_result();
-	log(limitOrder)
+	logger.debug(limitOrder)
 	return limitOrder
 
 #ask
 def cancelSell():
-	log("==cancelSell==")
+	logger.debug("==cancelSell==")
 	orders = limitOrder()
 	for it in orders['limitOrders']:
 		if('ask'==it['type']):
@@ -189,17 +210,17 @@ def cancelSell():
 
 #bid
 def cancelBuy():
-	log("==cancelBuy==")
+	logger.debug("==cancelBuy==")
 	orders = limitOrder()
 	for it in orders['limitOrders']:
 		if('bid'==it['type']):
 			cancel(it)
 
 def on_error(ws, error):
-	log(error)
+	logger.debug(error)
 
 def on_close(ws):
-	log("### closed ###")
+	logger.debug("### closed ###")
 
 def on_open(ws):
 	ws.send("{event: 'join', channel: 'live'}")
@@ -215,9 +236,9 @@ def on_open(ws):
 	# 	log("thread terminating...")
 	# _thread.start_new_thread(run, ())
 
-def log(str):
-	print(str)
-	logging.debug(str)
+# def log(str):
+	# print(str)
+	# logger.debug(str)
 
 if __name__ == "__main__":
 	config = configparser.ConfigParser()
@@ -249,15 +270,15 @@ if __name__ == "__main__":
 	BUY_WAIT_SEC 	= Decimal(CONFIG['BUY_WAIT_SEC'])
 	SELL_WAIT_SEC 	= Decimal(CONFIG['SELL_WAIT_SEC'])
 
-	log("=====config=====")
+	logger.debug("=====config=====")
 	# log("START_COIN : {}".format(START_COIN))
 	# log("DEST_COIN : {}".format(DEST_COIN))
-	log("SELL_PER : {}".format(SELL_PER))
-	log("BUY_PER : {}".format(BUY_PER))
-	log("KRW_SELL : {}".format(KRW_SELL))
-	log("KRW_BUY : {}".format(KRW_BUY))
-	log("BUY_WAIT_SEC : {}".format(BUY_WAIT_SEC))
-	log("SELL_WAIT_SEC : {}".format(SELL_WAIT_SEC))
+	logger.debug("SELL_PER : {}".format(SELL_PER))
+	logger.debug("BUY_PER : {}".format(BUY_PER))
+	logger.debug("KRW_SELL : {}".format(KRW_SELL))
+	logger.debug("KRW_BUY : {}".format(KRW_BUY))
+	logger.debug("BUY_WAIT_SEC : {}".format(BUY_WAIT_SEC))
+	logger.debug("SELL_WAIT_SEC : {}".format(SELL_WAIT_SEC))
 
 	websocket.enableTrace(True)
 	ws = websocket.WebSocketApp("wss://ws.coinone.co.kr:20013/",

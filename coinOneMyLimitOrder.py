@@ -5,13 +5,15 @@ import hashlib
 import hmac
 import httplib2
 import time
+import logging
 import pprint
 import configparser
 import sys
 from coinOne import  CoinOne
 
-
+logger = logging.getLogger("coinAnalyzer")
 class CoinOneMyLimitOrder(CoinOne):
+
 	"""
 	PAYLOAD = {
 		"access_token": ACCESS_TOKEN,
@@ -25,7 +27,7 @@ class CoinOneMyLimitOrder(CoinOne):
 		self.PAYLOAD = payload
 
 	def getPayLoad(self):
-		self.log('name:{} url:{}   paylad:{}'.format(type(self).__name__, self.URL, self.PAYLOAD))
+		logger.debug('name:{} url:{}   paylad:{}'.format(type(self).__name__, self.URL, self.PAYLOAD))
 		return self.PAYLOAD
 
 

@@ -4,6 +4,7 @@ import _thread
 import time
 import json
 import logging
+import logging.handlers
 import sys
 import configparser
 import math
@@ -14,7 +15,25 @@ from coinOneMyLimitOrder import CoinOneMyLimitOrder
 from coinOneLimitSell import CoinOneLimitSell
 from coinOneLimitBuy import CoinOneLimitBuy
 from coinOneCancel import CoinOneCancel
-logging.basicConfig(filename='log.log',format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',level=logging.DEBUG)
+
+
+# logger 인스턴스를 생성 및 로그 레벨 설정
+logger = logging.getLogger("coinAnalyzer")
+logger.setLevel(logging.DEBUG)
+# fileHandler와 StreamHandler를 생성
+# file max size를 10MB로 설정
+file_max_bytes = 10 * 1024 * 1024
+# fileHandler = logging.FileHandler(filename='./log/my.log', maxBytes=file_max_bytes, backupCount=10)
+fileHandler = logging.handlers.RotatingFileHandler('./log/my.log', maxBytes=file_max_bytes, backupCount=10)
+streamHandler = logging.StreamHandler()
+# formmater 생성
+formatter = logging.Formatter('[%(levelname)s|%(filename)s:%(lineno)s] %(asctime)s > %(message)s')
+fileHandler.setFormatter(formatter)
+streamHandler.setFormatter(formatter)
+# Handler를 logging에 추가
+logger.addHandler(fileHandler)
+logger.addHandler(streamHandler)
+
 
 ##config
 CONFIG		= None
@@ -49,19 +68,19 @@ def cancel(atOrder):
 		"is_ask": 1 if 'ask'==atOrder['type'] else 0,
 		"currency": "btc"
 	}
-	log(CoinOneCancel(CONFIG, payload).get_result())
+	logger.debug(CoinOneCancel(CONFIG, payload).get_result())
 	pass
 def limitOrder():
 	limitOrderPayload = {
 		"currency": "btc"
 	}
 	limitOrder = CoinOneMyLimitOrder(CONFIG, limitOrderPayload).get_result();
-	log(limitOrder)
+	logger.debug(limitOrder)
 	return limitOrder
 
 #ask
 def cancelSell():
-	log("==cancelSell==")
+	logger.debug("==cancelSell==")
 	orders = limitOrder()
 	for it in orders['limitOrders']:
 		if('ask'==it['type']):
@@ -69,16 +88,16 @@ def cancelSell():
 
 #bid
 def cancelBuy():
-	log("==cancelBuy==")
+	logger.debug("==cancelBuy==")
 	orders = limitOrder()
 	for it in orders['limitOrders']:
 		if('bid'==it['type']):
 			cancel(it)
 
 
-def log(str):
-	print(str)
-	logging.debug(str)
+# def logger.debug(str):
+# 	print(str)
+# 	logging.debug(str)
 
 if __name__ == "__main__":
 	config = configparser.ConfigParser()
@@ -110,15 +129,15 @@ if __name__ == "__main__":
 	BUY_WAIT_SEC 	= Decimal(CONFIG['BUY_WAIT_SEC'])
 	SELL_WAIT_SEC 	= Decimal(CONFIG['SELL_WAIT_SEC'])
 
-	log("=====config=====")
-	# log("START_COIN : {}".format(START_COIN))
-	# log("DEST_COIN : {}".format(DEST_COIN))
-	log("SELL_PER : {}".format(SELL_PER))
-	log("BUY_PER : {}".format(BUY_PER))
-	log("KRW_SELL : {}".format(KRW_SELL))
-	log("KRW_BUY : {}".format(KRW_BUY))
-	log("BUY_WAIT_SEC : {}".format(BUY_WAIT_SEC))
-	log("SELL_WAIT_SEC : {}".format(SELL_WAIT_SEC))
+	logger.debug("=====config=====")
+	# logger.debug("START_COIN : {}".format(START_COIN))
+	# logger.debug("DEST_COIN : {}".format(DEST_COIN))
+	logger.debug("SELL_PER : {}".format(SELL_PER))
+	logger.debug("BUY_PER : {}".format(BUY_PER))
+	logger.debug("KRW_SELL : {}".format(KRW_SELL))
+	logger.debug("KRW_BUY : {}".format(KRW_BUY))
+	logger.debug("BUY_WAIT_SEC : {}".format(BUY_WAIT_SEC))
+	logger.debug("SELL_WAIT_SEC : {}".format(SELL_WAIT_SEC))
 
 
 	cancelSell()

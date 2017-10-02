@@ -6,11 +6,12 @@ import hmac
 import httplib2
 import time
 import pprint
+import logging
 import configparser
 import sys
 from coinOne import CoinOne
 
-
+logger = logging.getLogger("coinAnalyzer")
 class CoinOneBlance(CoinOne):
 
 	def __init__(self, config):

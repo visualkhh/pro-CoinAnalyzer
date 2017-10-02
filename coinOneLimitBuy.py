@@ -5,12 +5,13 @@ import hashlib
 import hmac
 import httplib2
 import time
+import logging
 from decimal import Decimal
 import pprint
 import configparser
 import sys
 from coinOne import CoinOne
-
+logger = logging.getLogger("coinAnalyzer")
 class CoinOneLimitBuy(CoinOne):
 
 	PAYLOAD			= None
@@ -28,7 +29,7 @@ class CoinOneLimitBuy(CoinOne):
 
 
 	def getPayLoad(self):
-		self.log('name:{} url:{}   paylad:{}'.format(type(self).__name__, self.URL, self.PAYLOAD))
+		logger.debug('name:{} url:{}   paylad:{}'.format(type(self).__name__, self.URL, self.PAYLOAD))
 		return self.PAYLOAD
 
 

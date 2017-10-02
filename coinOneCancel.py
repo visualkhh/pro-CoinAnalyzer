@@ -6,11 +6,12 @@ import hmac
 import httplib2
 import time
 import pprint
+import logging
 import configparser
 import sys
 from coinOne import CoinOne
 
-
+logger = logging.getLogger("coinAnalyzer")
 class CoinOneCancel(CoinOne):
 	PAYLOAD			= None
 	"""
@@ -32,7 +33,7 @@ class CoinOneCancel(CoinOne):
 
 
 	def getPayLoad(self):
-		self.log('name:{} url:{}   paylad:{}'.format(type(self).__name__, self.URL, self.PAYLOAD))
+		logger.debug('name:{} url:{}   paylad:{}'.format(type(self).__name__, self.URL, self.PAYLOAD))
 		return self.PAYLOAD
 
 

@@ -9,6 +9,7 @@ import pprint
 import logging
 from abc import *
 
+logger = logging.getLogger("coinAnalyzer")
 class CoinOne(metaclass=ABCMeta):
 	URL = 'https://api.coinone.co.kr/'
 	ACCESS_TOKEN	= ''
@@ -60,9 +61,9 @@ class CoinOne(metaclass=ABCMeta):
 		content = json.loads(content)
 		return content
 
-	def log(self, str):
-		print(str)
-		logging.debug(str)
+	# def log(self, str):
+		# print(str)
+		# logging.debug(str)
 
 if __name__   == "__main__":
 	config = {

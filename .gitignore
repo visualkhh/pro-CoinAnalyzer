@@ -33,6 +33,9 @@ cmake-build-debug/
 *.iws
 *.iml
 *.log
+log/
+log/*.log
+__pycache__/
 
 
 ## Plugin-specific files:
