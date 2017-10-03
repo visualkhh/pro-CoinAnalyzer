@@ -101,7 +101,7 @@ def on_message(ws, message):
 		if krwQuote!=KRW_QUOTE:
 			logger.debug("*** KRW Quote Modify \t start({}) -> this({}) = |{}| ***".format(START_KRW_QUOTE, krwQuote, krwQuote-START_KRW_QUOTE))
 		if btcBalance!=BTC_BALANCE:
-			logger.debug("*** btc balance Modify \t start({}) ->   banlance({})  availb({}) = |{}| START_KRW_QUOTE({})***".format(START_BTC_BALANCE, btcBalance, btcAvailBalance , btcBalance-START_BTC_BALANCE, START_KRW_QUOTE))
+			logger.debug("*** btc balance Modify \t start({}) -> btcBal({}) btcAvailBal({}), krwBal({}) krwAvailBal = |{}| START_KRW_QUOTE({})***".format(START_BTC_BALANCE, btcBalance, btcAvailBalance , krwBalance, krwAvailBalance,btcBalance-START_BTC_BALANCE, START_KRW_QUOTE))
 		KRW_QUOTE 	= krwQuote
 		BTC_BALANCE = btcBalance
 
