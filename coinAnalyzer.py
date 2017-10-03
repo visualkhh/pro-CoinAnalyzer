@@ -28,7 +28,7 @@ file_max_bytes = 10 * 1024 * 1024
 fileHandler = logging.handlers.RotatingFileHandler('./log/my.log', maxBytes=file_max_bytes, backupCount=10)
 streamHandler = logging.StreamHandler()
 # formmater 생성
-formatter = logging.Formatter('[%(levelname)s|%(filename)s:%(lineno)s] %(asctime)s > %(message)s')
+formatter = logging.Formatter('[%(levelname)s|%(filename)s:%(lineno)s:%(threadName)s] %(asctime)s > %(message)s')
 fileHandler.setFormatter(formatter)
 streamHandler.setFormatter(formatter)
 # Handler를 logging에 추가
@@ -46,6 +46,8 @@ KRW_BUY 			= None	#Decimal(200000000) 	#살때 KRW에 얼마더 추가할건지
 #WAIT
 BUY_WAIT_SEC 		= None
 SELL_WAIT_SEC 		= None
+KRW_DEFEN			= None	#Decimal("0")
+BTC_DEFEN			= None	#Decimal("0")
 #config end
 
 
@@ -70,12 +72,19 @@ def on_message(ws, message):
 	# print("==========")
 	try:
 		global START_KRW_QUOTE, START_BTC_BALANCE, KRW_QUOTE, BTC_BALANCE, SELL_WAIT, BUY_WAIT
-
+		websocketJson 	= json.loads(message)
+		if 'coinoneP' not in websocketJson:
+			logger.debug("webSocketJson not in coinoneP -> {}".format(websocketJson))
+			return
 		krwQuote 		= Decimal(json.loads(message)['coinoneP'])						#1코인당 KRW
-		krwBalance 		= Decimal(CoinOneBlance(CONFIG).get_result()['krw']['balance'])
-		krwAvailBalance = Decimal(CoinOneBlance(CONFIG).get_result()['krw']['avail'])
-		btcBalance 		= Decimal(CoinOneBlance(CONFIG).get_result()['btc']['balance'])
-		btcAvailBalance = Decimal(CoinOneBlance(CONFIG).get_result()['btc']['avail'])
+		coinOneBalance	= CoinOneBlance(CONFIG).get_result()
+		if "0"!=coinOneBalance['errorCode']:
+			logger.debug("coinOneBalance Error -> {}".format(coinOneBalance))
+			return
+		krwBalance 		= Decimal(coinOneBalance['krw']['balance'])
+		krwAvailBalance = Decimal(coinOneBalance['krw']['avail'])
+		btcBalance 		= Decimal(coinOneBalance['btc']['balance'])
+		btcAvailBalance = Decimal(coinOneBalance['btc']['avail'])
 
 		#btc 잔액이 변경 되면 다시 시작한다.
 		# if START_BTC_BALANCE and btcBalance > START_BTC_BALANCE:
@@ -92,7 +101,7 @@ def on_message(ws, message):
 		if krwQuote!=KRW_QUOTE:
 			logger.debug("*** KRW Quote Modify \t start({}) -> this({}) = |{}| ***".format(START_KRW_QUOTE, krwQuote, krwQuote-START_KRW_QUOTE))
 		if btcBalance!=BTC_BALANCE:
-			logger.debug("*** btc balance Modify \t start({}) -> availb({}) banlance({}) = |{}| ***".format(START_BTC_BALANCE, btcAvailBalance, btcBalance, btcBalance-START_BTC_BALANCE))
+			logger.debug("*** btc balance Modify \t start({}) ->   banlance({})  availb({}) = |{}| START_KRW_QUOTE({})***".format(START_BTC_BALANCE, btcBalance, btcAvailBalance , btcBalance-START_BTC_BALANCE, START_KRW_QUOTE))
 		KRW_QUOTE 	= krwQuote
 		BTC_BALANCE = btcBalance
 
@@ -122,15 +131,15 @@ def on_message(ws, message):
 		logger.debug("--SELL_WAIT:{} BUY_WAIT:{},  BTC:1btcKRWval({:10.8})  MY:btcBal({:10.8}  btcVal({:10.8})"
 					 .format(SELL_WAIT,BUY_WAIT,krwQuote,btcBalance,thisKRW));
 
-		# logger.debug("SELL STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
-		# 	.format(startKRW, stateSellPer, stateSellVal, sellKRW, stateStartThisVal))
 		logger.debug("SELL STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
-			.format(START_KRW_QUOTE, startSellQuotePer, startSellQuoteVal, sellQuotKRW, stateStartThisQuoteVal))
+					 .format(startKRW, stateSellPer, stateSellVal, sellKRW, stateStartThisVal))
+		logger.debug("SELL STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
+					 .format(START_KRW_QUOTE, startSellQuotePer, startSellQuoteVal, sellQuotKRW, stateStartThisQuoteVal))
 
-		# logger.debug(" BUY STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
-		# 	.format(startKRW, stateBuyPer, stateBuyVal, buyKRW, stateStartThisVal))
 		logger.debug(" BUY STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
-			.format(START_KRW_QUOTE, startBuyQuotePer, startBuyQuoteVal, buyQuotKRW, stateStartThisQuoteVal))
+					 .format(startKRW, stateBuyPer, stateBuyVal, buyKRW, stateStartThisVal))
+		logger.debug(" BUY STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
+					 .format(START_KRW_QUOTE, startBuyQuotePer, startBuyQuoteVal, buyQuotKRW, stateStartThisQuoteVal))
 
 
 
@@ -140,6 +149,8 @@ def on_message(ws, message):
 			def run(*args):
 				global SELL_WAIT
 				SELL_WAIT = True
+				cancelSell()
+				time.sleep(1)
 				logger.debug("thread start {} {}".format("sell", current_thread().getName()))
 				try:
 					result = sell(btcBalance, krwQuote)
@@ -148,7 +159,10 @@ def on_message(ws, message):
 				except Exception as e:
 					logger.debug(e)
 				finally:
-					cancelSell()# time.sleep(1)
+					try:
+						cancelSell()
+					except:
+						pass
 					SELL_WAIT = False
 					logger.debug("thread end {} {}".format("sell", current_thread().getName()))
 			Thread(target=run).start()
@@ -159,6 +173,8 @@ def on_message(ws, message):
 			def run(*args):
 				global BUY_WAIT
 				BUY_WAIT = True
+				cancelBuy()
+				time.sleep(1)
 				logger.debug("thread start {} {}".format("buy", current_thread().getName()))
 				try:
 					result = buy(krwBalance, krwQuote)
@@ -167,7 +183,10 @@ def on_message(ws, message):
 				except Exception as e:
 					logger.debug(e)
 				finally:
-					cancelBuy()
+					try:
+						cancelBuy()
+					except:
+						pass
 					BUY_WAIT = False
 					logger.debug("thread end {} {}".format("buy", current_thread().getName()))
 			Thread(target=run,).start()
@@ -179,9 +198,11 @@ def on_message(ws, message):
 
 #매도
 def sell(btcBalance, krwQuote):
-	logger.debug("==sell==")
-	if(btcBalance < Decimal("0.01")):
-		logging.debug("Sell no request  low qty {} ".format(btcBalance))
+	global BTC_DEFEN
+	logger.debug("==sell== btcBal({:10.8}), BTC_DEFFN({:10.8}), krwQuote({})".format(btcBalance,BTC_DEFEN,krwQuote))
+	if(btcBalance < Decimal("0.0001")):
+		logger.debug("Sell no request  Low")
+		return
 	payload = {
 	  "price": int(krwQuote + KRW_SELL),
 	  "qty": float(math.trunc(btcBalance*10000)/10000), #coinone은 소수점 4자리수까지만 받는다  최소단위 btc
@@ -193,10 +214,12 @@ def sell(btcBalance, krwQuote):
 	return result
 #매수
 def buy(krwBalance, krwQuote):
-	logger.debug("==buy==")
-	qty = Decimal(krwBalance / krwQuote);
+	global KRW_DEFEN
+	availKRW = krwBalance - KRW_DEFEN
+	qty = Decimal(availKRW / krwQuote)
+	logger.debug("==buy== qty {:10.8} availKRW({:10.8}) // krwBalance({:10.8}) KRW_DEFEN({:10.8}) krwQuote({:10.8})".format(qty, availKRW, krwBalance, KRW_DEFEN, krwQuote))
 	if(qty < Decimal("0.01")):
-		logging.debug("Buy no request  low qty {} ".format(qty))
+		logger.debug("Buy no request  Low")
 		return
 	payload = {
 		"price": int(krwQuote + KRW_BUY),
@@ -223,23 +246,24 @@ def limitOrder():
 		"currency": "btc"
 	}
 	limitOrder = CoinOneMyLimitOrder(CONFIG, limitOrderPayload).get_result();
-	logger.debug(limitOrder)
+	# logger.debug(limitOrder)
 	return limitOrder
 
 #ask
 def cancelSell():
-	logger.debug("==cancelSell==")
 	orders = limitOrder()
 	for it in orders['limitOrders']:
 		if('ask'==it['type']):
+			logger.debug("==cancelSell== {}".format(it))
 			cancel(it)
 
 #bid
 def cancelBuy():
-	logger.debug("==cancelBuy==")
+	# logger.debug("==cancelBuy==")
 	orders = limitOrder()
 	for it in orders['limitOrders']:
 		if('bid'==it['type']):
+			logger.debug("==cancelBuy== {}".format(it))
 			cancel(it)
 
 def on_error(ws, error):
@@ -285,16 +309,19 @@ if __name__ == "__main__":
 	KRW_SELL = 100000000
 	KRW_BUY = 200000000
 	"""
-
-	CONFIG 			= config[configSection]
-	# START_COIN 	= Decimal(CONFIG['START_COIN'])
-	# DEST_COIN 	= Decimal(CONFIG['DEST_COIN'])
-	SELL_PER 		= Decimal(CONFIG['SELL_PER'])
-	BUY_PER 		= Decimal(CONFIG['BUY_PER'])
-	KRW_SELL 		= Decimal(CONFIG['KRW_SELL'])
-	KRW_BUY 		= Decimal(CONFIG['KRW_BUY'])
-	BUY_WAIT_SEC 	= Decimal(CONFIG['BUY_WAIT_SEC'])
-	SELL_WAIT_SEC 	= Decimal(CONFIG['SELL_WAIT_SEC'])
+	CONFIG 				= config[configSection]
+	# START_COIN 		= Decimal(CONFIG['START_COIN'])
+	# DEST_COIN 		= Decimal(CONFIG['DEST_COIN'])
+	SELL_PER 			= Decimal(CONFIG['SELL_PER'] 			if 'SELL_PER' in CONFIG else '0.3')
+	BUY_PER 			= Decimal(CONFIG['BUY_PER'] 			if 'BUY_PER' in CONFIG else '0.3')
+	KRW_BUY 			= Decimal(CONFIG['KRW_BUY']				if 'KRW_BUY' in CONFIG else '-500000')
+	KRW_SELL 			= Decimal(CONFIG['KRW_SELL']			if 'KRW_SELL' in CONFIG else '500000')
+	BUY_WAIT_SEC 		= Decimal(CONFIG['BUY_WAIT_SEC'] 		if 'BUY_WAIT_SEC' in CONFIG else '30')
+	SELL_WAIT_SEC 		= Decimal(CONFIG['SELL_WAIT_SEC']		if 'SELL_WAIT_SEC' in CONFIG else '30')
+	KRW_DEFEN 			= Decimal(CONFIG['KRW_DEFEN']			if 'KRW_DEFEN' in CONFIG else '0')
+	BTC_DEFEN 			= Decimal(CONFIG['BTC_DEFEN']			if 'BTC_DEFEN' in CONFIG else '0')
+	START_KRW_QUOTE 	= Decimal(CONFIG['START_KRW_QUOTE'])	if 'START_KRW_QUOTE' in CONFIG else None
+	START_BTC_BALANCE 	= Decimal(CONFIG['START_BTC_BALANCE'])	if 'START_BTC_BALANCE' in CONFIG else None
 
 	logger.debug("=====config=====")
 	# log("START_COIN : {}".format(START_COIN))
@@ -305,6 +332,10 @@ if __name__ == "__main__":
 	logger.debug("KRW_BUY : {}".format(KRW_BUY))
 	logger.debug("BUY_WAIT_SEC : {}".format(BUY_WAIT_SEC))
 	logger.debug("SELL_WAIT_SEC : {}".format(SELL_WAIT_SEC))
+	logger.debug("KRW_DEFEN : {}".format(KRW_DEFEN))
+	logger.debug("BTC_DEFEN : {}".format(BTC_DEFEN))
+	logger.debug("START_KRW_QUOTE : {}".format(START_KRW_QUOTE))
+	logger.debug("START_BTC_BALANCE : {}".format(START_BTC_BALANCE))
 
 	websocket.enableTrace(True)
 	ws = websocket.WebSocketApp("wss://ws.coinone.co.kr:20013/",

@@ -58,9 +58,9 @@ class CoinOne(metaclass=ABCMeta):
 
 	def get_result(self):
 		content = self.get_response(self.URL, self.getFullPayLoad())
-		content = json.loads(content)
+		content = json.loads(str(content.decode("utf-8")).replace('“','"').replace('”','"'))
 		return content
-
+'{"result”:"error”,"errorCode”:"4","errorMsg”:"Blocked user access."}'
 	# def log(self, str):
 		# print(str)
 		# logging.debug(str)

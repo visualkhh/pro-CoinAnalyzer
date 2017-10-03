@@ -33,7 +33,7 @@ class CoinOneCancel(CoinOne):
 
 
 	def getPayLoad(self):
-		logger.debug('name:{} url:{}   paylad:{}'.format(type(self).__name__, self.URL, self.PAYLOAD))
+		# logger.debug('name:{} url:{}   paylad:{}'.format(type(self).__name__, self.URL, self.PAYLOAD))
 		return self.PAYLOAD
 
 
