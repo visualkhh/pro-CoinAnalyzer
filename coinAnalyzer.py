@@ -199,13 +199,15 @@ def on_message(ws, message):
 #매도
 def sell(btcBalance, krwQuote):
 	global BTC_DEFEN
-	logger.debug("==sell== btcBal({:10.8}), BTC_DEFFN({:10.8}), krwQuote({})".format(btcBalance,BTC_DEFEN,krwQuote))
-	if(btcBalance < Decimal("0.0001")):
+	btcAvail 	= btcBalance - BTC_DEFEN
+	price		= int(krwQuote + KRW_SELL)
+	logger.debug("==sell== btcBal({:10.8}) btcAvail[qty]({:10.8}), BTC_DEFFN({:10.8}), krwQuote({}), KRW_SELL({}) = price({})".format(btcBalance, btcAvail, BTC_DEFEN, krwQuote, KRW_SELL, price))
+	if(btcAvail < Decimal("0.0001")):
 		logger.debug("Sell no request  Low")
 		return
 	payload = {
-	  "price": int(krwQuote + KRW_SELL),
-	  "qty": float(math.trunc(btcBalance*10000)/10000), #coinone은 소수점 4자리수까지만 받는다  최소단위 btc
+	  "price": price,
+	  "qty": float(math.trunc(btcAvail*10000)/10000), #coinone은 소수점 4자리수까지만 받는다  최소단위 btc
 	  "currency": "btc"
 	}
 	# log(sellPayload)
@@ -215,14 +217,15 @@ def sell(btcBalance, krwQuote):
 #매수
 def buy(krwBalance, krwQuote):
 	global KRW_DEFEN
-	availKRW = krwBalance - KRW_DEFEN
-	qty = Decimal(availKRW / krwQuote)
-	logger.debug("==buy== qty {:10.8} availKRW({:10.8}) // krwBalance({:10.8}) KRW_DEFEN({:10.8}) krwQuote({:10.8})".format(qty, availKRW, krwBalance, KRW_DEFEN, krwQuote))
+	krwAvail	= krwBalance - KRW_DEFEN
+	qty 		= Decimal(krwAvail / krwQuote)
+	price		= int(krwQuote + KRW_BUY)
+	logger.debug("==buy== qty {:10.8} kwrAvail({:10.8}) // krwBalance({:10.8}) KRW_DEFEN({:10.8}) krwQuote({:10.8}), KRW_BUY({}) = price({})".format(qty, krwAvail, krwBalance, KRW_DEFEN, krwQuote, KRW_BUY, price))
 	if(qty < Decimal("0.01")):
 		logger.debug("Buy no request  Low")
 		return
 	payload = {
-		"price": int(krwQuote + KRW_BUY),
+		"price": price,
 		"qty": float(math.trunc(qty*10000)/10000),  #coinone은 소수점 4자리수까지만 받는다  최소단위 btc
 		"currency": "btc"
 	}
