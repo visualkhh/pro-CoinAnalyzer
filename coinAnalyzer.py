@@ -55,6 +55,7 @@ BTC_DEFEN			= None	#Decimal("0")
 # DEST_COIN 			= None	#Decimal(0) 			#목적금액
 START_KRW_QUOTE 	= None
 START_BTC_BALANCE 	= None
+INIT_KRW_BALANCE	= None
 
 KRW_QUOTE 			= None
 BTC_BALANCE 		= None
@@ -71,7 +72,7 @@ SELL_WAIT			= False
 def on_message(ws, message):
 	# print("==========")
 	try:
-		global START_KRW_QUOTE, START_BTC_BALANCE, KRW_QUOTE, BTC_BALANCE, SELL_WAIT, BUY_WAIT
+		global START_KRW_QUOTE, START_BTC_BALANCE, INIT_KRW_BALANCE, KRW_QUOTE, BTC_BALANCE, SELL_WAIT, BUY_WAIT
 		websocketJson 	= json.loads(message)
 		if 'coinoneP' not in websocketJson:
 			logger.debug("webSocketJson not in coinoneP -> {}".format(websocketJson))
@@ -92,6 +93,8 @@ def on_message(ws, message):
 			START_KRW_QUOTE 	= None
 			START_BTC_BALANCE 	= None
 
+		if not INIT_KRW_BALANCE:
+			INIT_KRW_BALANCE = krwBalance
 		if not START_KRW_QUOTE:
 			START_KRW_QUOTE = krwQuote
 		if not START_BTC_BALANCE:
@@ -128,8 +131,8 @@ def on_message(ws, message):
 		stateStartThisQuoteVal 	= Decimal(krwQuote - START_KRW_QUOTE)							#1btc당 krw 시작 금액에서 얼마만큼 상하인지
 
 
-		logger.debug("--SELL_WAIT:{} BUY_WAIT:{},  BTC:1btcKRWval({:10.8})  MY:btcBal({:10.8}  btcVal({:10.8})"
-					 .format(SELL_WAIT,BUY_WAIT,krwQuote,btcBalance,thisKRW));
+		logger.debug("--SELL_WAIT:{} BUY_WAIT:{},  BTC:1btcKRWval({:10.8})  my:btcBal({:10.8} krwBal({}) btcKRWVal({:10.8}) initKRW({}) = {:10.8}"
+					 .format(SELL_WAIT, BUY_WAIT, krwQuote, btcBalance, krwBalance, thisKRW, INIT_KRW_BALANCE, thisKRW - INIT_KRW_BALANCE));
 
 		logger.debug("SELL STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
 					 .format(startKRW, stateSellPer, stateSellVal, sellKRW, stateStartThisVal))
@@ -325,6 +328,7 @@ if __name__ == "__main__":
 	BTC_DEFEN 			= Decimal(CONFIG['BTC_DEFEN']			if 'BTC_DEFEN' in CONFIG else '0')
 	START_KRW_QUOTE 	= Decimal(CONFIG['START_KRW_QUOTE'])	if 'START_KRW_QUOTE' in CONFIG else None
 	START_BTC_BALANCE 	= Decimal(CONFIG['START_BTC_BALANCE'])	if 'START_BTC_BALANCE' in CONFIG else None
+	INIT_KRW_BALANCE 	= Decimal(CONFIG['INIT_KRW_BALANCE'])	if 'INIT_KRW_BALANCE' in CONFIG else None
 
 	logger.debug("=====config=====")
 	# log("START_COIN : {}".format(START_COIN))
@@ -339,6 +343,7 @@ if __name__ == "__main__":
 	logger.debug("BTC_DEFEN : {}".format(BTC_DEFEN))
 	logger.debug("START_KRW_QUOTE : {}".format(START_KRW_QUOTE))
 	logger.debug("START_BTC_BALANCE : {}".format(START_BTC_BALANCE))
+	logger.debug("INIT_KRW_BALANCE : {}".format(INIT_KRW_BALANCE))
 
 	websocket.enableTrace(True)
 	ws = websocket.WebSocketApp("wss://ws.coinone.co.kr:20013/",
