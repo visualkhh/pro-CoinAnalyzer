@@ -32,4 +32,4 @@ if __name__   == "__main__":
 	config.sections()
 	config 		= config[configSection]
 
-	pprint.pprint(CoinOneBlance(config).get_result());
+	pprint.pprint(CoinOneBlance(config).get_result())

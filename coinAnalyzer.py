@@ -17,7 +17,6 @@ from coinOneLimitSell import CoinOneLimitSell
 from coinOneLimitBuy import CoinOneLimitBuy
 from coinOneCancel import CoinOneCancel
 
-
 # logger 인스턴스를 생성 및 로그 레벨 설정
 logger = logging.getLogger("coinAnalyzer")
 logger.setLevel(logging.DEBUG)
@@ -35,8 +34,6 @@ streamHandler.setFormatter(formatter)
 logger.addHandler(fileHandler)
 logger.addHandler(streamHandler)
 
-
-
 ##config
 CONFIG				= None
 SELL_PER 			= None	#Decimal(0.03) 			#수익률 퍼센트 EARN_PER
@@ -51,8 +48,6 @@ BTC_DEFEN			= None	#Decimal("0")
 #config end
 
 
-# START_COIN 			= None	#Decimal(0) 			#시작금액
-# DEST_COIN 			= None	#Decimal(0) 			#목적금액
 START_KRW_QUOTE 	= None
 START_BTC_BALANCE 	= None
 INIT_KRW_BALANCE	= None
@@ -62,12 +57,6 @@ BTC_BALANCE 		= None
 
 BUY_WAIT			= False
 SELL_WAIT			= False
-
-
-
-
-
-
 
 def on_message(ws, message):
 	# print("==========")
@@ -100,7 +89,6 @@ def on_message(ws, message):
 		if not START_BTC_BALANCE:
 			START_BTC_BALANCE = btcBalance
 
-
 		if krwQuote!=KRW_QUOTE:
 			logger.debug("*** KRW Quote Modify \t start({}) -> this({}) = |{}| ***".format(START_KRW_QUOTE, krwQuote, krwQuote-START_KRW_QUOTE))
 		if btcBalance!=BTC_BALANCE:
@@ -121,7 +109,6 @@ def on_message(ws, message):
 		stateSellPer 			= Decimal((thisKRW / sellKRW) * 100)							#판매 목표금액 100%달성하기위한 현재 상태
 		stateSellVal 			= Decimal(sellKRW - thisKRW)									#판매 목표금액 달성하기 위한 현재 부족한 금액상태
 
-
 		startBuyQuotePer 		= Decimal((buyQuotKRW / krwQuote) *100)							#1btc당 krw 판매 목표금액 100%달성하기위한 현재 상태
 		startBuyQuoteVal		= Decimal(krwQuote - buyQuotKRW)								#1btc당 krw 판매 목표금액 달성하기 위한 현재 부족한 금액상태
 		stateBuyPer 			= Decimal(((buyKRW / thisKRW) * 100))							#구매 목표금액 100%달성하기위한 현재 상태
@@ -129,7 +116,6 @@ def on_message(ws, message):
 
 		stateStartThisVal 		= Decimal(thisKRW - startKRW)									#시작 금액에서 얼마만큼 상하인지
 		stateStartThisQuoteVal 	= Decimal(krwQuote - START_KRW_QUOTE)							#1btc당 krw 시작 금액에서 얼마만큼 상하인지
-
 
 		logger.debug("--SELL_WAIT:{} BUY_WAIT:{},  BTC:1btcKRWval({:10.8})  my:btcBal({:10.8} krwBal({}) btcKRWVal({:10.8}) initKRW({}) = {:10.8}"
 					 .format(SELL_WAIT, BUY_WAIT, krwQuote, btcBalance, krwBalance, thisKRW, INIT_KRW_BALANCE, thisKRW - INIT_KRW_BALANCE));
@@ -143,9 +129,6 @@ def on_message(ws, message):
 					 .format(startKRW, stateBuyPer, stateBuyVal, buyKRW, stateStartThisVal))
 		logger.debug(" BUY STATE: S({:10.8}) \t W({:10.8}%, {:10.8}) \t -> \t E({:10.8}) = UD({:10.8})"
 					 .format(START_KRW_QUOTE, startBuyQuotePer, startBuyQuoteVal, buyQuotKRW, stateStartThisQuoteVal))
-
-
-
 
 		#팔수있는 상황이면 팔아라
 		if not SELL_WAIT and startSellQuotePer > Decimal(100):
@@ -197,7 +180,6 @@ def on_message(ws, message):
 
 	except Exception as e:
 		logger.debug(e)
-
 
 #매도
 def sell(btcBalance, krwQuote):
@@ -308,16 +290,12 @@ if __name__ == "__main__":
 	[DEFAULT]
 	ACCESS_TOKEN = eee
 	SECRET_KEY = eee
-	START_COIN = 0
-	DEST_COIN = 0
 	SELL_PER = 0.03
 	BUY_PER = 0.03
 	KRW_SELL = 100000000
 	KRW_BUY = 200000000
 	"""
 	CONFIG 				= config[configSection]
-	# START_COIN 		= Decimal(CONFIG['START_COIN'])
-	# DEST_COIN 		= Decimal(CONFIG['DEST_COIN'])
 	SELL_PER 			= Decimal(CONFIG['SELL_PER'] 			if 'SELL_PER' in CONFIG else '0.3')
 	BUY_PER 			= Decimal(CONFIG['BUY_PER'] 			if 'BUY_PER' in CONFIG else '0.3')
 	KRW_BUY 			= Decimal(CONFIG['KRW_BUY']				if 'KRW_BUY' in CONFIG else '-500000')
@@ -331,8 +309,6 @@ if __name__ == "__main__":
 	INIT_KRW_BALANCE 	= Decimal(CONFIG['INIT_KRW_BALANCE'])	if 'INIT_KRW_BALANCE' in CONFIG else None
 
 	logger.debug("=====config=====")
-	# log("START_COIN : {}".format(START_COIN))
-	# log("DEST_COIN : {}".format(DEST_COIN))
 	logger.debug("SELL_PER : {}".format(SELL_PER))
 	logger.debug("BUY_PER : {}".format(BUY_PER))
 	logger.debug("KRW_SELL : {}".format(KRW_SELL))

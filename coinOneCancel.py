@@ -27,7 +27,7 @@ class CoinOneCancel(CoinOne):
 
 
 	def __init__(self, config, payload):
-		super().__init__('https://api.coinone.co.kr/v2/order/cancel/',config)
+		super().__init__('https://api.coinone.co.kr/v2/order/cancel/', config)
 		self.PAYLOAD = payload
 
 

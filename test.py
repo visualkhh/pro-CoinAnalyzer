@@ -1,13 +1,7 @@
-import time
-from decimal import Decimal
+ats = ['1','2','3']
+for at in ats:
+	print("wow -> {}".format(at))
 
-def gg():
-	print("--")
-	return
-	print("--ss")
+for  at in range(101):
+	print("at->{}".format(at))
 
-
-
-
-if __name__   == "__main__":
-	gg()
