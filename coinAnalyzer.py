@@ -154,7 +154,7 @@ def on_message(ws, message):
 			Thread(target=run).start()
 
 
-		# 살수 있는 상황이면 사라
+		#살수 있는 상황이면 사라
 		if not BUY_WAIT and startBuyQuotePer > Decimal(100):
 			def run(*args):
 				global BUY_WAIT
@@ -296,17 +296,17 @@ if __name__ == "__main__":
 	KRW_BUY = 200000000
 	"""
 	CONFIG 				= config[configSection]
-	SELL_PER 			= Decimal(CONFIG['SELL_PER'] 			if 'SELL_PER' in CONFIG else '0.3')
-	BUY_PER 			= Decimal(CONFIG['BUY_PER'] 			if 'BUY_PER' in CONFIG else '0.3')
-	KRW_BUY 			= Decimal(CONFIG['KRW_BUY']				if 'KRW_BUY' in CONFIG else '-500000')
-	KRW_SELL 			= Decimal(CONFIG['KRW_SELL']			if 'KRW_SELL' in CONFIG else '500000')
-	BUY_WAIT_SEC 		= Decimal(CONFIG['BUY_WAIT_SEC'] 		if 'BUY_WAIT_SEC' in CONFIG else '30')
-	SELL_WAIT_SEC 		= Decimal(CONFIG['SELL_WAIT_SEC']		if 'SELL_WAIT_SEC' in CONFIG else '30')
-	KRW_DEFEN 			= Decimal(CONFIG['KRW_DEFEN']			if 'KRW_DEFEN' in CONFIG else '0')
-	BTC_DEFEN 			= Decimal(CONFIG['BTC_DEFEN']			if 'BTC_DEFEN' in CONFIG else '0')
-	START_KRW_QUOTE 	= Decimal(CONFIG['START_KRW_QUOTE'])	if 'START_KRW_QUOTE' in CONFIG else None
-	START_BTC_BALANCE 	= Decimal(CONFIG['START_BTC_BALANCE'])	if 'START_BTC_BALANCE' in CONFIG else None
-	INIT_KRW_BALANCE 	= Decimal(CONFIG['INIT_KRW_BALANCE'])	if 'INIT_KRW_BALANCE' in CONFIG else None
+	SELL_PER 			= Decimal(CONFIG['SELL_PER'] 			if 'SELL_PER' 			in CONFIG else '0.3')
+	BUY_PER 			= Decimal(CONFIG['BUY_PER'] 			if 'BUY_PER' 			in CONFIG else '0.3')
+	KRW_BUY 			= Decimal(CONFIG['KRW_BUY']				if 'KRW_BUY' 			in CONFIG else '-500000')
+	KRW_SELL 			= Decimal(CONFIG['KRW_SELL']			if 'KRW_SELL' 			in CONFIG else '500000')
+	BUY_WAIT_SEC 		= Decimal(CONFIG['BUY_WAIT_SEC'] 		if 'BUY_WAIT_SEC' 		in CONFIG else '30')
+	SELL_WAIT_SEC 		= Decimal(CONFIG['SELL_WAIT_SEC']		if 'SELL_WAIT_SEC' 		in CONFIG else '30')
+	KRW_DEFEN 			= Decimal(CONFIG['KRW_DEFEN']			if 'KRW_DEFEN' 			in CONFIG else '0')
+	BTC_DEFEN 			= Decimal(CONFIG['BTC_DEFEN']			if 'BTC_DEFEN' 			in CONFIG else '0')
+	START_KRW_QUOTE 	= Decimal(CONFIG['START_KRW_QUOTE'])	if 'START_KRW_QUOTE' 	in CONFIG else None
+	START_BTC_BALANCE 	= Decimal(CONFIG['START_BTC_BALANCE'])	if 'START_BTC_BALANCE' 	in CONFIG else None
+	INIT_KRW_BALANCE 	= Decimal(CONFIG['INIT_KRW_BALANCE'])	if 'INIT_KRW_BALANCE' 	in CONFIG else None
 
 	logger.debug("=====config=====")
 	logger.debug("SELL_PER : {}".format(SELL_PER))

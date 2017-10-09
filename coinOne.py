@@ -26,7 +26,7 @@ class CoinOne(metaclass=ABCMeta):
 		pass
 
 	def getFullPayLoad(self):
-		fullPayload = {};
+		fullPayload = {}
 		fullPayload.update(self.getPayLoad())
 		fullPayload.update({
 			"access_token": self.ACCESS_TOKEN,
@@ -60,10 +60,7 @@ class CoinOne(metaclass=ABCMeta):
 		content = self.get_response(self.URL, self.getFullPayLoad())
 		content = json.loads(str(content.decode("utf-8")).replace('“','"').replace('”','"'))
 		return content
-'{"result”:"error”,"errorCode”:"4","errorMsg”:"Blocked user access."}'
-	# def log(self, str):
-		# print(str)
-		# logging.debug(str)
+
 
 if __name__   == "__main__":
 	config = {
