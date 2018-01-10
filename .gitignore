@@ -65,3 +65,4 @@ fabric.properties
 .idea/
 
 # End of https://www.gitignore.io/api/intellij+all
+/web/node_modules/
